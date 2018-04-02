@@ -1,6 +1,7 @@
 (ns org.f0t0n.clj-signit.signature
-  (:use [org.f0t0n.clj-signit.utils :only [hex]])
+  (:require [clojure.string :as str])
   (:require [org.f0t0n.clj-signit.constants :as const])
+  (:use [org.f0t0n.clj-signit.utils :only [hex]])
   (:import (javax.crypto Mac)
            (javax.crypto.spec SecretKeySpec)))
 
@@ -28,7 +29,26 @@
    & {:keys [algorithm auth-header-prefix]
       :or {algorithm const/hmac-sha256
            auth-header-prefix const/auth-header-prefix}}]
-  (create-digest secret-key message))
+  (format
+    const/signature-format
+    auth-header-prefix
+    access-key
+    (create-digest secret-key message)))
 
 
-(println (count (create "test" "test" "Hello World!")))
+(defn parse
+  [signature]
+  ; Parses the header value
+  ; and returns a list (<auth_header_prefix>, <access_key>, <hmac_hex_digest>).
+  (let [[auth-header-prefix access-secret-keys]
+        (-> signature str/trim (str/split  #"\s+" 2))]
+    (map str/trim
+         (into [auth-header-prefix]
+               (str/split access-secret-keys #"\s*:\s*")))))
+
+
+(defn verify
+  [hmac-hex-digest secret-key message
+   & {:keys [algorithm]
+      :or {algorithm const/hmac-sha256}}]
+  (= (create-digest secret-key message) hmac-hex-digest))

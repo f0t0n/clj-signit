@@ -9,6 +9,3 @@
     (->> (range key-length)
          (map (fn [x](nth key-chars (.nextInt const/random chars-cnt))))
          (apply str))))
-
-
-(time (dotimes [n 1000] (generate)))
